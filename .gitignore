@@ -1,0 +1,7 @@
+﻿.settings
+target/maven-archiver
+.classpath
+.project
+target/test-classes
+target/maven-status
+target
