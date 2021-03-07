@@ -13,7 +13,15 @@ public class Button {
 	public Button(String name, Floor floor) {
 		   
 		this.name = name;
-		this.floor = floor;
+		this.setFloor(floor);
 
+	}
+
+	public Floor getFloor() {
+		return floor;
+	}
+
+	public void setFloor(Floor floor) {
+		this.floor = floor;
 	}
 }

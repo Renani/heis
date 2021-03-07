@@ -1,5 +1,5 @@
 package com.renani.heis.modell;
 
-public enum ElevatorStaus {
+public enum ElevatorStatus {
 available, unavailable,onroute, emergencyStopped; 
 }

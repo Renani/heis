@@ -20,8 +20,11 @@ public class ElevatorTimerTask extends TimerTask {
 		public void run() {
 			try {
 
+				if (latch != null) {
+					latch.countDown();
+				}
 				heightGain = heightGain - speedPrTick;
-
+				
 				if (heightGain < 0) {
 					el.stopElevator();
 					movementListener.registerMovementStopped(heightGain);
@@ -29,13 +32,20 @@ public class ElevatorTimerTask extends TimerTask {
 				}
 				LOG.info("Elevator is still running.  Nr meters left " + heightGain
 						+ " driving speed " + speedPrTick);
-				if (latch != null) {
-					latch.countDown();
-				}
+				
+
 			} catch (Exception e) {
 				LOG.info("ElevatorTimer driving failed", e);
+				el.stopEmergency();
+				this.movementListener.registerMovementStopped(heightGain);
 				handleCriticalException(e);
-
+			 
+			}catch(Throwable t) {
+				LOG.info("ElevatorTimer driving failed", t);
+				el.stopEmergency();
+				this.movementListener.registerMovementStopped(heightGain);
+				handleCriticalException(t);
+ 
 			}
 		}
 		
@@ -45,17 +55,16 @@ public class ElevatorTimerTask extends TimerTask {
 			return super.cancel();
 		}
 
-		private void handleCriticalException(Exception e) {
+		private void handleCriticalException(Throwable t) {
 			LOG.debug("running debug ...");
 			LOG.debug("Calling for repair");
-			this.el.setCurrentStatus(ElevatorStaus.unavailable);
-
+	 
 		}
 
 		public   ElevatorTimerTask(Elevator elevator, double height, double speedPrTick, MovementListener movementListener,  CountDownLatch latch) {
 			this.movementListener = movementListener;
 			LOG.debug("Preparing for running elevator");
-			this.el = el;
+			this.el=elevator;
 			this.heightGain = height;
  			this.latch = latch;
 			this.speedPrTick = speedPrTick;

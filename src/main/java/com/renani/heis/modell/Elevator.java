@@ -11,34 +11,39 @@ public class Elevator {
 	private static Logger LOG = getLogger(Elevator.class);
 	// having it as a field for status info
 	private double speed;
-	private ElevatorStaus currentStatus;
+	private ElevatorStatus currentStatus = ElevatorStatus.available;
 
 	private Timer elevatorDriveTimer;
-	int timerDelay = 10;
-	final int LOWEST_POSSIBLE_TIMERDELAY = 5;
-	private double speedPrTick;
+	int timerDelay = 75;
+	final int LOWEST_POSSIBLE_TIMERDELAY = 75;
+	private double speedPrTick=0.5;
 	double errorMargin = 0.05;
 	private ElevatorTimerTask elevatorTimerTask;
+	private ElevatorStatusListener elevatorStatusListener;
 
 	//
 	// TODO: Use javax-measure or similar instead
 	/***
 	 * 
 	 * @param speed       given in m/s
-	 * @param errorMargin lowest possible
+	 * 
 	 */
 
-	public Elevator(double speed, double errorMargin) {
+	// TODO: Safety evaluation of speed and errorMargin
+	public Elevator(double speed) {
 		this.speed = speed;
+		
 		// timerDelay = some function of speed
 		try {
-			timerDelay = (int) Math.floor(errorMargin * (speed * 1000));
-			LOG.debug("TimerDelay " + timerDelay);
+			//TODO: Remmember double dividing on integer is apparently always 0 (??)
+			this.speedPrTick = (timerDelay/1000.0)*speed;
+			
+			LOG.info("TimerDelay " + timerDelay + " speedPrTicket " + speedPrTick + " speed " + speed);
 			if (timerDelay < LOWEST_POSSIBLE_TIMERDELAY) {
 				throw new IllegalArgumentException(
 						"This elevator cannot support this speed with the error margin given. Decrease speed or increase errormargin");
 			}
-			this.speedPrTick = errorMargin;
+ 
 
 		} catch (Exception e) {
 			LOG.debug("Possible timerDelay is set to 0", e);
@@ -61,7 +66,7 @@ public class Elevator {
 		elevatorTimerTask = new ElevatorTimerTask(this, height, speedPrTick, movementListener, latch);
 		elevatorDriveTimer = new Timer();
 		elevatorDriveTimer.scheduleAtFixedRate(elevatorTimerTask, 0, timerDelay);
-
+		this.setCurrentStatus(ElevatorStatus.onroute);
 		if (latch != null) {
 			try {
 				latch.await();
@@ -73,6 +78,7 @@ public class Elevator {
 
 	}
 
+	//TODO: Consider to do it a static method as it could be useful utility method
 	public double estimateExpectedTicks(final double height) {
 		return height / speedPrTick;
 	}
@@ -80,8 +86,14 @@ public class Elevator {
 	protected void stopElevator() {
 		if (elevatorDriveTimer != null) {
 			elevatorDriveTimer.cancel();
-			elevatorTimerTask.cancel();
 			elevatorDriveTimer.purge();
+			LOG.info("Stopping elevator!!");
+			elevatorDriveTimer=null;
+
+		}
+		if (elevatorTimerTask != null) {
+			elevatorTimerTask.cancel();
+			elevatorTimerTask = null;
 		}
 
 	}
@@ -97,18 +109,24 @@ public class Elevator {
 	}
 
 	public void stopEmergency() {
-		this.setCurrentStatus(ElevatorStaus.emergencyStopped);
+		this.setCurrentStatus(ElevatorStatus.emergencyStopped);
 		this.stopElevator();
 		LOG.info("Elevator has done an emergency stop");
 
 	}
 
-	public ElevatorStaus getElevatorStatus() {
+	public ElevatorStatus getElevatorStatus() {
 		return currentStatus;
 	}
 
-	public void setCurrentStatus(ElevatorStaus currentStatus) {
-		this.currentStatus = currentStatus;
+	public void setCurrentStatus(ElevatorStatus newState) {
+		this.currentStatus = newState;
+		if (this.elevatorStatusListener != null)
+			this.elevatorStatusListener.HandleStatusHasChanged(newState);
+	}
+
+	public void registerElevatorStatusListener(ElevatorStatusListener listener) {
+		this.elevatorStatusListener = listener;
 	}
 
 }

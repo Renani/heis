@@ -12,12 +12,24 @@ public class Floor {
 	//Meters
 	
 	private String name;
+
+	private double height;
 	public Floor (String name, double height ) {
 		this.name = name;
+		this.setHeight(height);
+		
 	}
 	
 	public String toString () {
 		return name;
+	}
+
+	public double getHeight() {
+		return height;
+	}
+
+	public void setHeight(double height) {
+		this.height = height;
 	}
 
 }
