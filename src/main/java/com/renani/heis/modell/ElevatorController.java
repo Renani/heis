@@ -77,6 +77,8 @@ public class ElevatorController {
 	 * @param button
 	 * @return 
 	 */
+	
+	//TODO: BUG: In case of emergency stops I need to cancel the countdown.
 	protected  Direction registerButtonClick(final Button button, CountDownLatch latch) {
 		if (!ElevatorStatus.available.equals(this.elevator.getElevatorStatus())) {
 			LOG.info("Elevator is not available yet");
